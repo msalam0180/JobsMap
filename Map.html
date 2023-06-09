@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Map</title>
+    <link rel="stylesheet" href="bootstrap/dist/css/bootstrap.min.css" />
+
+    <style>
+        #map {
+            height: 450px;
+            width: 100%;
+        }
+
+        .list {
+            border: 1px solid;
+            padding: 8px;
+            margin-top: 10px;
+            margin-left: 2px;
+        }
+    </style>
+
+    <script src="js/location.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBtDgxU5vMz3NJHfMhFyX0ilx5aa0LHegk"></script>
+    <script src="js/markerdata.js"></script>
+    <script type="text/javascript">
+        var filtererdData = data[0].Locations;
+        var markers = [];
+        var markerCluster;
+        var zoom = 10; //set zoom level
+
+        function initialize() {
+            markers = [];
+            var map = new google.maps.Map(document.getElementById('map'), {
+                zoom: zoom,
+                center: { lat: filtererdData[0].Latitude, lng: filtererdData[0].Longitude }
+            });
+
+
+            for (var i = 0; i < filtererdData.length; i++) {
+
+                var latLng = new google.maps.LatLng(filtererdData[i].Latitude, filtererdData[i].Longitude);
+                var marker = new google.maps.Marker({
+                    position: latLng,
+                    map: map,
+
+                });
+                markers.push(marker);
+
+            }
+
+            markerCluster = new MarkerClusterer(map, markers, { gridSize: 20 });
+
+            generateTable(filtererdData);
+
+        }
+
+
+
+
+
+    </script>
+
+</head>
+<body>
+
+    <div class="row">
+        <main role="main" class="pb-3">
+
+            <div id="map"></div>
+
+
+            <p id="count"></p>
+
+
+            <div class="container">
+                <table id="MyTable" class="table table-responsive">
+                    <thead>
+                        <tr>
+
+                            <th>
+                                Job Title
+                            </th>
+                            <th>
+                                Location
+                            </th>
+
+                            <th>
+
+                            </th>
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+                    </tbody>
+
+
+                </table>
+
+                <div class="row" id="listData">
+
+                </div>
+            </div>
+
+
+
+
+
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+
+        </div>
+    </footer>
+
+
+
+
+    <script>
+        initialize();
+        function generateTable(jsonData) {
+            var tableBody = document.querySelector('#MyTable tbody');
+            jsonData.forEach(function (object) {
+
+                var id = object.Id;
+                var location = object.LocationName;
+                var jobs = object.Positions;
+
+                jobs.forEach(function (job) {
+
+                    var row = document.createElement('tr');
+
+
+                    var titleCell = document.createElement('td');
+                    titleCell.textContent = job.PositionTitle;
+                    row.appendChild(titleCell);
+
+
+                    var locationCell = document.createElement('td');
+                    locationCell.textContent = location;
+                    row.appendChild(locationCell);
+
+
+
+
+                    var linkCell = document.createElement('td');
+                    var link = document.createElement('a');
+                    link.href = job.PositionURI;
+                    link.textContent = "View";
+                    link.classList.add("btn", "btn-danger");
+
+                    linkCell.appendChild(link);
+
+
+                    row.appendChild(linkCell);
+
+                    tableBody.appendChild(row);
+
+                });
+
+
+            });
+
+        }
+
+    </script>
+
+
+</body>
+</html>

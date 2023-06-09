@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Map</title>
+    <link rel="stylesheet" href="bootstrap/dist/css/bootstrap.min.css" />
+
+    <style>
+        #map {
+            height: 450px;
+            width: 100%;
+        }
+
+        .list {
+            border: 1px solid;
+            padding: 8px;
+            margin-top: 10px;
+            margin-left: 2px;
+        }
+    </style>
+
+    <script src="js/sample_data.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBtDgxU5vMz3NJHfMhFyX0ilx5aa0LHegk"></script>
+    <script src="js/markerdata.js"></script>
+    <script type="text/javascript">
+        var filtererdData = data.filter(x => x.job_title ==='Nursing');
+        var markers = [];
+        var markerCluster;
+        var zoom = 10; //set zoom level
+       
+        function initialize() {
+            markers = [];
+            var map = new google.maps.Map(document.getElementById('map'), {
+                zoom: zoom,
+                center: { lat: filtererdData[0].coords.lat, lng: filtererdData[0].coords.lng }
+            });
+
+
+            for (var i = 0; i < filtererdData.length; i++) {
+                var latLng = new google.maps.LatLng(filtererdData[i].coords.lat, filtererdData[i].coords.lng);
+                var marker = new google.maps.Marker({
+                    position: latLng,
+                    map: map,
+
+                });
+
+                markers.push(marker);
+
+            }
+
+            markerCluster = new MarkerClusterer(map, markers, { gridSize: 20 });
+
+
+
+        }
+
+
+
+
+
+    </script>
+
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container-fluid">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">WebApplication1</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        <main role="main" class="pb-3">
+
+
+
+
+            <div class="row" style="margin-bottom:10px">
+                <div class="col-3">
+                    City: <select id="city" class="form-control"></select>
+                </div>
+
+                <div class="col-3">
+                    Job Type: <select id="jobType" class="form-control"></select>
+                </div>
+
+                <div class="col-3">
+                    Search: <input type="text" id="search" class="form-control" />
+                </div>
+
+                <div class="col-3" style="margin-top:23px">
+
+                    <button id="btnsearch" class="btn btn-info">Search </button>
+                </div>
+
+            </div>
+            <div class="row">
+
+                <div class="container">
+                    <div id="map"></div>
+                </div>
+
+                <p id="count"></p>
+
+            </div>
+            <div class="container">
+                <div class="row" id="listData">
+
+                </div>
+            </div>
+
+
+
+
+
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+
+        </div>
+    </footer>
+
+
+
+    <script>
+
+        function AppendList(response) {
+
+            var container = document.getElementById('listData');
+            container.innerHTML = '';
+            response.forEach(function (obj) {
+                var div = document.createElement('div');
+                div.className = 'col-md-4';
+
+                var listdiv = document.createElement('div');
+                listdiv.className = 'list';
+                var h3 = document.createElement('h3');
+                h3.style.color = 'red';
+                h3.textContent = obj.job_title;
+
+                var p1 = document.createElement('p');
+                p1.textContent = obj.job_type;
+
+                var p2 = document.createElement('p');
+                p2.textContent = obj.CITY + ',' + obj.State;
+
+
+                div.appendChild(listdiv);
+                listdiv.appendChild(h3);
+                listdiv.appendChild(p1);
+                listdiv.appendChild(p2);
+
+
+                container.appendChild(div);
+            });
+
+
+        }
+        //for cities
+
+        var cities = [...new Set(data.map(obj => obj.CITY))]; //get cities/location from API , change this line
+        var dropdown = document.getElementById('city');
+        for (var key in cities) {
+            if (cities.hasOwnProperty(key)) {
+                var option = document.createElement('option');
+                option.value = cities[key];
+                option.textContent = cities[key];
+                dropdown.appendChild(option);
+            }
+        }
+
+        //for JobType
+
+        var jobtype = [...new Set(data.map(obj => obj.job_type))]; //get jobs from API , change this line
+        var dropdown = document.getElementById('jobType');
+        for (var key in jobtype) {
+            if (jobtype.hasOwnProperty(key)) {
+                var option = document.createElement('option');
+                option.value = jobtype[key];
+                option.textContent = jobtype[key];
+                dropdown.appendChild(option);
+            }
+        }
+        var button = document.getElementById('btnsearch');
+
+        button.addEventListener('click', function () {
+            var city = document.getElementById('city').value;
+            var jobType = document.getElementById('jobType').value;
+            var search = document.getElementById('search').value;
+            filtererdData = [];
+            console.log(search);
+            filtererdData = data.filter(function (obj) {
+
+                return obj.CITY.toLowerCase().includes(city.toLowerCase()) &&
+                    obj.job_type.toLowerCase().includes(jobType.toLowerCase())
+                    ;
+            });
+
+            if (search) {
+                filtererdData = filtererdData.filter(function (obj) {
+
+                    return obj.job_title.toLowerCase().includes(search.toLowerCase());
+
+                });
+            }
+
+            var paragraph = document.getElementById('count');
+            paragraph.innerHTML = filtererdData.length + ' out of ' + data.length
+            initialize();
+            var listData = filtererdData;
+            AppendList(listData);
+
+        });
+
+
+    </script>
+
+
+    <script>
+        initialize();
+        AppendList(filtererdData);
+
+    </script>
+
+
+</body>
+</html>
