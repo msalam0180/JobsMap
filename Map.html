@@ -8,26 +8,93 @@
 
     <style>
         #map {
-            height: 450px;
             width: 100%;
+            min-height:900px;
+            position: relative;
         }
 
-        .list {
-            border: 1px solid;
-            padding: 8px;
-            margin-top: 10px;
-            margin-left: 2px;
+        #overlay {
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            background-color: white;
+            padding: 10px;
+            width:30%;
+        }
+        @media (max-width: 767px) {
+            #overlay {
+                position: static;
+                width: 100%;
+                margin-top: 10px;
+            }
+        }
+        .pagination a{
+            margin-right:10px;
+        }
+        .list-element{
+            border-bottom:1px solid;
+            padding:10px;
+            margin-bottom:5px;
+        }
+        .jobtitle {
+      text-decoration:none;
+      color:#1141e1;
+      font-weight:bold;
         }
     </style>
+    <script src="js/jquery.min.js"></script>
 
     <script src="js/location.js"></script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBtDgxU5vMz3NJHfMhFyX0ilx5aa0LHegk"></script>
+
     <script src="js/markerdata.js"></script>
+
     <script type="text/javascript">
+        var icon = {
+            url: 'images/map-icon.png',
+              scaledSize: new google.maps.Size(35, 50), // Adjust the size of the icon
+            origin: new google.maps.Point(0, 0),
+            anchor: new google.maps.Point(30, 50) // Adjust the anchor point if needed
+        };
+
         var filtererdData = data[0].Locations;
+
+        var objectList = [];
+
+        for (var j = 0; j < filtererdData.length; j++) {
+
+            filtererdData[j].Positions.forEach(function (job) {
+
+                var object = {
+                    LocationId: filtererdData[j].Id,
+                    LocationName: filtererdData[j].LocationName,
+                    JobId: job.Id,
+                    Lat: filtererdData[j].Latitude,
+                    Lng: filtererdData[j].Longitude,
+                    PositionTitle: job.PositionTitle,
+                    PositionURI: job.PositionURI
+                };
+                objectList.push(object);
+
+            });
+
+        }
+
         var markers = [];
         var markerCluster;
-        var zoom = 10; //set zoom level
+        var zoom = 7; //set zoom level
+
+        function addInfoWindow(marker, message) {
+
+            var infoWindow = new google.maps.InfoWindow({
+                content: message
+            });
+
+            google.maps.event.addListener(marker, 'click', function () {
+                infoWindow.open(map, marker);
+            });
+        }
+
 
         function initialize() {
             markers = [];
@@ -38,24 +105,52 @@
 
 
             for (var i = 0; i < filtererdData.length; i++) {
-
+              
                 var latLng = new google.maps.LatLng(filtererdData[i].Latitude, filtererdData[i].Longitude);
                 var marker = new google.maps.Marker({
                     position: latLng,
                     map: map,
+                    icon: icon,
+                    title: '' + filtererdData[i].Id + '',
+                     label: {
+                        text: (i+1).toString(), // Convert the number to a string for the label
+                        color: "#ffffff", // Label text color
+                        fontWeight: "bold" // Label text weight
+                    },
 
                 });
+                addInfoWindow(marker,`
+                    <div class= "info-window-content single" >
+        <a href="#"> <h5 onclick="ShowSelectedData(`+ filtererdData[i].Id + `)" tabindex="51"> ` + filtererdData[i].LocationName +`</h5>  <a>
+<div class="info-window-items ms-scroller">
+<span class="scroller-prev" style="display: none;">&nbsp;</span><span class="scroller-next" style="display: none;">&nbsp;</span></div>
+
+</div >
+  
+                    `)
+
+
+                marker.addListener("click", function () {
+
+                    // Handle the marker click event here
+                    console.log("Marker clicked with ID: " + marker.title);
+                });
+
+
                 markers.push(marker);
 
             }
 
             markerCluster = new MarkerClusterer(map, markers, { gridSize: 20 });
 
-            generateTable(filtererdData);
+            
 
         }
 
-
+        function ShowSelectedData(id) {
+            var filteredObjectList = objectList.filter(x => x.LocationId === id);
+            displayPage(1, filteredObjectList);
+        }
 
 
 
@@ -69,42 +164,31 @@
 
             <div id="map"></div>
 
-
-            <p id="count"></p>
-
-
-            <div class="container">
-                <table id="MyTable" class="table table-responsive">
-                    <thead>
-                        <tr>
-
-                            <th>
-                                Job Title
-                            </th>
-                            <th>
-                                Location
-                            </th>
-
-                            <th>
-
-                            </th>
-                        </tr>
-
-                    </thead>
+            <div id="overlay">
 
 
-                    <tbody>
-                    </tbody>
+                <div class="container">
+                    <h4 style="font-weight:bold">Nursing Jobs</h4>
+                    <div id="listData">
+
+                    </div>
 
 
-                </table>
 
-                <div class="row" id="listData">
 
                 </div>
+
+                <div class="container">
+                    <nav>
+                        <ul class="pagination" id="pagination"></ul>
+                    </nav>
+                </div>
+
             </div>
 
 
+
+          
 
 
 
@@ -122,53 +206,88 @@
 
     <script>
         initialize();
-        function generateTable(jsonData) {
-            var tableBody = document.querySelector('#MyTable tbody');
-            jsonData.forEach(function (object) {
 
-                var id = object.Id;
-                var location = object.LocationName;
-                var jobs = object.Positions;
+       
+        var rowsPerPage = 8;
+        var totalPages = Math.ceil(objectList.length / rowsPerPage);
 
-                jobs.forEach(function (job) {
+        function displayPage(pageNumber, objectList) {
 
-                    var row = document.createElement('tr');
+            var startIndex = (pageNumber - 1) * rowsPerPage;
+            var endIndex = startIndex + rowsPerPage;
 
+            $("#listData").html("")
+            var html = '';
+            for (var i = startIndex; i < endIndex && i <= objectList.length; i++) {
+              
+                html += `
+                       <div class="list-element" > 
+                        <div> <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-briefcase" viewBox="0 0 16 16">
+                        <path d="M6.5 1A1.5 1.5 0 0 0 5 2.5V3H1.5A1.5 1.5 0 0 0 0 4.5v8A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-8A1.5 1.5 0 0 0 14.5 3H11v-.5A1.5 1.5 0 0 0 9.5 1h-3zm0 1h3a.5.5 0 0 1 .5.5V3H6v-.5a.5.5 0 0 1 .5-.5zm1.886 6.914L15 7.151V12.5a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5V7.15l6.614 1.764a1.5 1.5 0 0 0 .772 0zM1.5 4h13a.5.5 0 0 1 .5.5v1.616L8.129 7.948a.5.5 0 0 1-.258 0L1 6.116V4.5a.5.5 0 0 1 .5-.5z"/>
+                       </svg>  <a href="`+ objectList[i].PositionURI +`" class="jobtitle"> `+ objectList[i].PositionTitle +`  </a> </div>  
+                        <div>   <span style="font-size:smaller"> `+ objectList[i].LocationName +` </span>  </div>  
+                        </div>`;
+               
+                $("#listData").append(html);
+                html = '';
+                // Add more cells as needed for additional columns
+            }
+        }
+        let currentPage = 1;
+        // Function to render the pagination buttons
+        function renderPagination() {
+            const totalPages = Math.ceil(objectList.length / rowsPerPage);
+            const paginationElement = document.getElementById("pagination");
+            paginationElement.innerHTML = "";
 
-                    var titleCell = document.createElement('td');
-                    titleCell.textContent = job.PositionTitle;
-                    row.appendChild(titleCell);
+            const maxVisibleButtons = 8; // Number of visible buttons in the pagination
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisibleButtons / 2));
+            let endPage = Math.min(startPage + maxVisibleButtons - 1, totalPages);
 
+            if (endPage - startPage < maxVisibleButtons - 1) {
+                startPage = Math.max(1, endPage - maxVisibleButtons + 1);
+            }
 
-                    var locationCell = document.createElement('td');
-                    locationCell.textContent = location;
-                    row.appendChild(locationCell);
-
-
-
-
-                    var linkCell = document.createElement('td');
-                    var link = document.createElement('a');
-                    link.href = job.PositionURI;
-                    link.textContent = "View";
-                    link.classList.add("btn", "btn-danger");
-
-                    linkCell.appendChild(link);
-
-
-                    row.appendChild(linkCell);
-
-                    tableBody.appendChild(row);
-
+            for (let i = startPage; i <= endPage; i++) {
+                const pageLink = document.createElement("a");
+                pageLink.href = "#";
+                pageLink.textContent = i;
+                pageLink.classList.add("btn", "btn-primary");
+                pageLink.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    currentPage = i;
+                    displayPage(currentPage, objectList);
+                    updateActivePage();
+                    renderPagination();
                 });
 
+                paginationElement.appendChild(pageLink);
+            }
 
-            });
-
+            updateActivePage();
         }
 
-    </script>
+        // Function to update the active page
+        function updateActivePage() {
+            const paginationLinks = document.querySelectorAll("#pagination a");
 
+            paginationLinks.forEach((link) => {
+                link.classList.remove("active");
+
+                if (link.textContent == currentPage) {
+                    link.classList.add("active");
+                }
+            });
+        }
+
+        displayPage(currentPage, objectList);
+        renderPagination();
+
+
+       
+
+
+    </script>
 
 </body>
 </html>

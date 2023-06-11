@@ -5,7 +5,7 @@ function MarkerClusterer(map, opt_markers, opt_options) {
     this.markers_ = [];
     this.clusters_ = [];
     this.sizes = [25, 25, 30, 30, 30];
-    this.BGColor = ["#c924c7", "#ffe11b", 'green', 'silver', 'Gray'];
+    this.BGColor = ['red', 'orange', 'green', 'silver', 'Gray'];
     this.ready_ = false;
     var options = opt_options || {};
     this.gridSize_ = options['gridSize'] || 60;
