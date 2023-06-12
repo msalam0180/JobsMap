@@ -50,6 +50,7 @@
     <script src="js/markerdata.js"></script>
 
     <script type="text/javascript">
+
         var icon = {
             url: 'images/map-icon.png',
               scaledSize: new google.maps.Size(35, 50), // Adjust the size of the icon
@@ -148,8 +149,11 @@
         }
 
         function ShowSelectedData(id) {
+            debugger;
             var filteredObjectList = objectList.filter(x => x.LocationId === id);
+            console.log(filteredObjectList);
             displayPage(1, filteredObjectList);
+
         }
 
 
@@ -206,44 +210,42 @@
 
     <script>
         initialize();
-
-       
-        var rowsPerPage = 8;
+        let currentPage = 1;
+        var rowsPerPage = 10;
         var totalPages = Math.ceil(objectList.length / rowsPerPage);
 
-        function displayPage(pageNumber, objectList) {
+        function displayPage(pageNumber, data) {
 
             var startIndex = (pageNumber - 1) * rowsPerPage;
             var endIndex = startIndex + rowsPerPage;
-
             $("#listData").html("")
             var html = '';
-            for (var i = startIndex; i < endIndex && i <= objectList.length; i++) {
+            for (var i = startIndex; i < endIndex && i < data.length; i++) {
               
                 html += `
                        <div class="list-element" > 
                         <div> <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-briefcase" viewBox="0 0 16 16">
                         <path d="M6.5 1A1.5 1.5 0 0 0 5 2.5V3H1.5A1.5 1.5 0 0 0 0 4.5v8A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-8A1.5 1.5 0 0 0 14.5 3H11v-.5A1.5 1.5 0 0 0 9.5 1h-3zm0 1h3a.5.5 0 0 1 .5.5V3H6v-.5a.5.5 0 0 1 .5-.5zm1.886 6.914L15 7.151V12.5a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5V7.15l6.614 1.764a1.5 1.5 0 0 0 .772 0zM1.5 4h13a.5.5 0 0 1 .5.5v1.616L8.129 7.948a.5.5 0 0 1-.258 0L1 6.116V4.5a.5.5 0 0 1 .5-.5z"/>
-                       </svg>  <a href="`+ objectList[i].PositionURI +`" class="jobtitle"> `+ objectList[i].PositionTitle +`  </a> </div>  
-                        <div>   <span style="font-size:smaller"> `+ objectList[i].LocationName +` </span>  </div>  
+                       </svg>  <a href="`+ data[i].PositionURI + `" class="jobtitle"> ` + data[i].PositionTitle +`  </a> </div>  
+                        <div>   <span style="font-size:smaller"> `+ data[i].LocationName +` </span>  </div>  
                         </div>`;
                
                 $("#listData").append(html);
                 html = '';
                 // Add more cells as needed for additional columns
             }
+
+            renderPagination(data);
         }
-        let currentPage = 1;
         // Function to render the pagination buttons
-        function renderPagination() {
-            const totalPages = Math.ceil(objectList.length / rowsPerPage);
+        function renderPagination(data) {
+
+            const totalPages = Math.ceil(data.length / rowsPerPage);
             const paginationElement = document.getElementById("pagination");
             paginationElement.innerHTML = "";
-
-            const maxVisibleButtons = 8; // Number of visible buttons in the pagination
+            const maxVisibleButtons = 10; // Number of visible buttons in the pagination
             let startPage = Math.max(1, currentPage - Math.floor(maxVisibleButtons / 2));
             let endPage = Math.min(startPage + maxVisibleButtons - 1, totalPages);
-
             if (endPage - startPage < maxVisibleButtons - 1) {
                 startPage = Math.max(1, endPage - maxVisibleButtons + 1);
             }
@@ -256,7 +258,7 @@
                 pageLink.addEventListener("click", (e) => {
                     e.preventDefault();
                     currentPage = i;
-                    displayPage(currentPage, objectList);
+                    displayPage(currentPage, data);
                     updateActivePage();
                     renderPagination();
                 });
@@ -281,7 +283,7 @@
         }
 
         displayPage(currentPage, objectList);
-        renderPagination();
+    
 
 
        
